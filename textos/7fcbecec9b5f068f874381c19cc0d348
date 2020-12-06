@@ -1,0 +1,37 @@
+NGINX DISTRIBUIDO
+
+/etc/nginx/conf.d
+
+nano new_sites.conf
+cat new_sites.conf
+
+server {
+   listen 80 default_server;
+   server_name yourdomain1.xyz www.yourdomain1.xyz;
+
+   location / {
+      proxy_set_header X-Real-IP $remote_addr;
+      proxy_pass http://localhost:8081;
+   }
+
+}
+
+server {
+   listen 80;
+   server_name yourdomain2.info www.yourdomain2.info;
+
+   location / {
+      proxy_set_header X-Real-IP $remote_addr;
+      proxy_pass http://localhost:8080;
+   }
+}
+
+nginx -t 
+
+systemctl reload nginx
+
+OG
+
+Instalar Ghost
+N setup nginx
+conf modificar 127.0.0.1 -> 0.0.0.0
