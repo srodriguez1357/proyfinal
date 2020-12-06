@@ -9,6 +9,7 @@ const crypto = require("crypto")
 const QRCode = require('qrcode');
 const fs     = require('fs');
 const Cryptr = require('cryptr');
+const argon2 = require('argon2');
 //const data = fs.readFileSync('./textos/confidencial.txt');
 //const NodeRSA = require('node-rsa');
 const { publicKey, privateKey } = crypto.generateKeyPairSync("rsa", {
@@ -33,20 +34,19 @@ app.get('/',(req, res) =>{
 });
 
 
-app.post("/api/regist", (req, res) => {
+app.post("/api/regist", async(req, res) => {
+  const { psw } = req.body;
   const id = uuid.v4();
   try {
     const path = `/user/${id}`;
-    // Create temporary secret until it it verified
     const temp_secret = speakeasy.generateSecret();
-    res.json({ id, secret: temp_secret.base32 })
+    const hash = await argon2.hash(psw);
+    res.json({ id, secret: temp_secret.base32, hash })
     QRCode.toDataURL(temp_secret.otpauth_url, function(err, data_url) {
       console.log(data_url);
       res.write('<img src="' + data_url + '">');
   });
-    // Create user in the database
-    db.push(path, { id, temp_secret });
-    // Send user id and base32 key to user
+    db.push(path, { id, temp_secret, hash });
     
   } catch(e) {
     console.log(e);
