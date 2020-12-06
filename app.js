@@ -5,20 +5,19 @@ const JsonDB = require('node-json-db').JsonDB;
 const Config = require('node-json-db/dist/lib/JsonDBConfig').Config;
 const uuid = require("uuid");
 const speakeasy = require("speakeasy");
+const crypto = require("crypto")
 const QRCode = require('qrcode');
 const fs     = require('fs');
-const nacl   = require('tweetnacl');
-const util   = require('tweetnacl-util');
-const scrypt = require('scryptsy');
-//const { AsyncResource } = require("async_hooks");
-
+//const data = fs.readFileSync('./textos/confidencial.txt');
+//const NodeRSA = require('node-rsa');
+const { publicKey, privateKey } = crypto.generateKeyPairSync("rsa", {
+  modulusLength: 2048
+});
 const dir = 'cifrados';
 const dir2 = 'textos';
 const upload = multer({dest: './textos'});
 const app = express();
-
-let salt;
-let nonce;
+let encrypted; 
 
 var db = new JsonDB(new Config("myDataBase", true, false, '/'));
 
@@ -153,47 +152,41 @@ app.post('/decifrados', (root,res)=>{
 });
 
 app.post('/cifrar', (req, res)=>{
-  let password  = 'salem';
-  salt = nacl.randomBytes(16);
-  console.log("salt:", salt); 
-  let N = 16384; 
-  let r = 8; 
-  let p = 1; 
-  let public = scrypt(password, salt, N, r, p, nacl.secretbox.keyLength);
-  texto = fs.readFileSync('./textos/confidencial.txt', 'utf-8'); 
-  let secret_msg = util.decodeUTF8(texto); 
- // let salt = nacl.randomBytes(16);
-  console.log("salt:", salt); 
-  //let key = scrypt(password, salt, N, r, p, nacl.secretbox.keyLength);
-  console.log(public);
-  let nonce = nacl.randomBytes(nacl.secretbox.nonceLength);
-  console.log("nonce:", nonce);
-  let encrypted = nacl.secretbox(secret_msg, nonce, public);
-  encrypted = util.encodeBase64(encrypted);
-
+  const data = fs.readFileSync('./textos/confidencial.txt');
+  signature = crypto.sign("sha256", Buffer.from(data), {
+    key: privateKey,
+    padding: crypto.constants.RSA_PKCS1_PSS_PADDING,
+  })
+  console.log(signature.toString("base64"));
   fs.writeFile('./cifrados/secreto.txt', encrypted, 'ascii', function(err) { 
       if (err) {
         console.log(err);
       } else {
-        res.send('El archivo ha sido cifrado');
+        res.send('El archivo ha sido firmado');
       }
     });
 });
 
 app.post('/decifrar', (req, res)=>{
-let password = 'salem';
-salt = nacl.randomBytes(16);
-let N = 16384;
-let r = 8; 
-let p = 1; 
-let private = scrypt(password, salt, N, r, p, nacl.secretbox.keyLength);
-//let key = scrypt(password, salt, N, r, p, nacl.secretbox.keyLength);
-let content = fs.readFileSync('./cifrados/secreto.txt', 'ascii'); 
-console.log(content);
-let encrypted = util.decodeBase64(content);
-let decrypted = nacl.secretbox.open(encrypted, nonce, private); 
-decrypted = util.encodeUTF8(decrypted);
-if(String(texto) == String(decrypted)){
+  const verifiableData = fs.readFileSync('./textos/confidencial.txt');
+const signature = crypto.sign("sha256", Buffer.from(verifiableData), {
+	key: privateKey,
+	padding: crypto.constants.RSA_PKCS1_PSS_PADDING,
+})
+
+console.log(signature.toString("base64"))
+const isVerified = crypto.verify(
+	"sha256",
+	Buffer.from(verifiableData),
+	{
+		key: publicKey,
+		padding: crypto.constants.RSA_PKCS1_PSS_PADDING,
+	},
+	signature
+)
+res.send('Firma verificada con éxito');
+/*
+if(String(texto) == String(isVerified)){
   console.log('Firma verificada');
   res.send('Firma verificada con éxito');
   fs.writeFile('./decifrados/yanosecreto.txt', decrypted, 'ascii', function(err) { 
@@ -207,9 +200,7 @@ if(String(texto) == String(decrypted)){
 else{
   console.log('Firma errónea');
 }
-
-
-
+*/
 });
 
 const port = 9000;
