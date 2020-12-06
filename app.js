@@ -8,6 +8,7 @@ const speakeasy = require("speakeasy");
 const crypto = require("crypto")
 const QRCode = require('qrcode');
 const fs     = require('fs');
+const Cryptr = require('cryptr');
 //const data = fs.readFileSync('./textos/confidencial.txt');
 //const NodeRSA = require('node-rsa');
 const { publicKey, privateKey } = crypto.generateKeyPairSync("rsa", {
@@ -15,6 +16,9 @@ const { publicKey, privateKey } = crypto.generateKeyPairSync("rsa", {
 });
 const dir = 'cifrados';
 const dir2 = 'textos';
+const dir3 = 'decifrados';
+const dir4 = 'cifradirijillos';
+const dir5 = 'decifradirijillos';
 const upload = multer({dest: './textos'});
 const app = express();
 let encrypted; 
@@ -139,8 +143,44 @@ app.post('/cifrados', (root,res)=>{
 });
 });
 
-app.post('/decifrados', (root,res)=>{
+app.post('/subidos', (root,res)=>{
   fs.readdir(dir2, (err, files) => {
+      if (err) {
+          throw err;
+      }
+      files.forEach(file => {
+          console.log(file);         
+      });
+      res.send(files);
+});
+});
+
+app.post('/cifrados', (root,res)=>{
+  fs.readdir(dir3, (err, files) => {
+      if (err) {
+          throw err;
+      }
+      files.forEach(file => {
+          console.log(file);         
+      });
+      res.send(files);
+});
+});
+
+app.post('/cifradillos', (root,res)=>{
+  fs.readdir(dir4, (err, files) => {
+      if (err) {
+          throw err;
+      }
+      files.forEach(file => {
+          console.log(file);         
+      });
+      res.send(files);
+});
+});
+
+app.post('/decifradillos', (root,res)=>{
+  fs.readdir(dir5, (err, files) => {
       if (err) {
           throw err;
       }
@@ -202,6 +242,39 @@ else{
 }
 */
 });
+
+app.post('/cifradirijillo', (req, res)=>{
+  const cryptr = new Cryptr('salem');
+  const encryptedString = cryptr.encrypt('./textos/confidencial.txt');
+  console.log(encryptedString); 
+  const decryptedString = cryptr.decrypt(encryptedString);
+  console.log(decryptedString); 
+  fs.writeFile('./cifradirijillos/zecreto.txt', encryptedString, 'ascii', function(err) { 
+    if (err) {
+      console.log(err);
+    } else {
+      res.send('El archivo ha sido firmado');
+    }
+  });
+ // res.send('Archivo cifrado con éxito');
+});
+
+app.post('/decifradirijillo', (req,res)=>{
+  const cryptr = new Cryptr('salem');
+  const encryptedString = cryptr.encrypt('./textos/confidencial.txt');
+  console.log(encryptedString); 
+  const decryptedString = cryptr.decrypt(encryptedString);
+  console.log(decryptedString); 
+  fs.writeFile('./decifradirijillos/yanozecreto.txt', decryptedString, 'ascii', function(err) { 
+    if (err) {
+      console.log(err);
+    } else {
+      res.send('El archivo ha sido firmado');
+    }
+  });
+  //res.send("Archivo decifrado con éxito");
+});
+
 
 const port = 9000;
 
