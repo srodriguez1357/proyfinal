@@ -198,7 +198,7 @@ app.post('/cifrar', (req, res)=>{
     padding: crypto.constants.RSA_PKCS1_PSS_PADDING,
   })
   console.log(signature.toString("base64"));
-  fs.writeFile('./cifrados/secreto.txt', encrypted, 'ascii', function(err) { 
+  fs.writeFile('./cifrados/secreto.txt', signature, 'ascii', function(err) { 
       if (err) {
         console.log(err);
       } else {
@@ -225,6 +225,13 @@ const isVerified = crypto.verify(
 	signature
 )
 res.send('Firma verificada con éxito');
+fs.writeFile('./decifrados/yanosecreto.txt', signature, 'ascii', function(err) { 
+  if (err) {
+    console.log(err);
+  } else {
+    res.send('El archivo ha sido firmado');
+  }
+});
 /*
 if(String(texto) == String(isVerified)){
   console.log('Firma verificada');
