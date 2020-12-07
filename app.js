@@ -97,7 +97,8 @@ app.post("/api/verify", (req,res) => {
     });
     if (verified) {
       db.push(path, { id: userId, secret: user.temp_secret });
-      res.json({ verified: true })
+      res.render('textos.ejs');
+
     } else {
       res.json({ verified: false})
     }
@@ -155,7 +156,7 @@ app.post('/subidos', (root,res)=>{
 });
 });
 
-app.post('/cifrados', (root,res)=>{
+app.post('/decifrados', (root,res)=>{
   fs.readdir(dir3, (err, files) => {
       if (err) {
           throw err;
